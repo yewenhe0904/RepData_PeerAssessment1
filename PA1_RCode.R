@@ -1,29 +1,14 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
-First, please set the working directory to the source file location.
-
-## Loading and preprocessing the data
-```{r echo=TRUE}
-#read data from the working directory
+#1
+#Read data from the working directory
 myactivity<-read.csv(paste0(getwd(),"/activity/activity.csv"))
-```
 
-## What is mean total number of steps taken per day?
-1.Total numbers of steps per day:
-```{r echo=TRUE}
+#2
 #Calculate the total numbers of steps per day by function tapply
 ttl_spd<-tapply(myactivity$steps,INDEX = myactivity$date,sum)
 ttl_spd<-as.data.frame(ttl_spd)
+#Clean-up the data
 names(ttl_spd)<-c("steps")
-print(ttl_spd)
-```
-
-2.Plot the histogram:
-```{r echo=TRUE}
+ttl_spd<-subset(ttl_spd,complete.cases(ttl_spd))
 #Make a histogram of the total number of steps taken each day
 #Call ggplot lib
 library(ggplot2)
@@ -34,19 +19,14 @@ g_hist<-ggplot(ttl_spd,aes(steps))
 + labs(x="Total steps taken each day")
 + labs(y="Count")
 + labs(title="Histogram of total steps per day"))
-```
 
-3.Report the mean and median of steps taken per day:
-```{r echo=TRUE}
+#report mean and median
 #mean
 mean(ttl_spd$steps,na.rm=T)
 #median
 median(ttl_spd$steps,na.rm = T)
-```
 
-## What is the average daily activity pattern?
-1.Time series plot:
-```{r echo=TRUE}
+#3
 #Calculate the average steps taken for each 5-min interval across all days
 avg_sp5_array<-tapply(myactivity$steps,INDEX = as.factor(myactivity$interval),mean,na.rm=T)
 #Clean up the data
@@ -62,18 +42,12 @@ g_timeseries<-ggplot(avg_sp5,aes(interval,steps))
 + labs(x="Time interval")
 + labs(y="Avg. steps")
 + labs(title="Times series plot of average steps taken for each 5-min interval across all days"))
-```
 
-2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
-```{r echo=TRUE}
 #Find the interval contains the maximum steps
 id_max<-match(max(avg_sp5$steps),avg_sp5$steps)
 avg_sp5[id_max,"interval"]
 
-```
-
-## Imputing missing values
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+
