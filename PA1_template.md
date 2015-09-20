@@ -164,7 +164,170 @@ avg_sp5[id_max,"interval"]
 ```
 
 ## Imputing missing values
+1.Calculate and report the total number of missing values in the dataset:
 
+```r
+#Calculate and report the total number of missing values in the dataset
+completecases<-complete.cases(myactivity)
+sum(!completecases)
+```
 
+```
+## [1] 2304
+```
+
+2.Devise a strategy for filling in all of the missing values in the dataset:
+
+```r
+#Use the mean 5-minute data to fill the missing values
+#Define a function to return mean 5-minute data given time interval
+match_sp5 <- function (time_int){
+        id<-match(x = time_int,table = avg_sp5$interval)
+        return(avg_sp5[id,"steps"])
+}
+```
+
+3.Create a new dataset that is equal to the original dataset but with the missing data filled in:
+
+```r
+#Use a for-loop imputing missing values
+new_myactivity<-myactivity
+for (i in 1:nrow(new_myactivity))
+        {
+        if (!completecases[i]){
+                new_myactivity[i,"steps"]<-match_sp5(new_myactivity[i,"interval"])}
+}
+#Check the incompletecases in the new data set
+new_completecases<-complete.cases(new_myactivity)
+sum(!new_completecases)
+```
+
+```
+## [1] 0
+```
+
+4.Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day:
+
+```r
+#Calculate the total numbers of steps per day by function tapply
+new_ttl_spd<-tapply(new_myactivity$steps,INDEX = new_myactivity$date,sum)
+new_ttl_spd<-as.data.frame(new_ttl_spd)
+#Clean-up the data
+names(new_ttl_spd)<-c("steps")
+new_ttl_spd<-subset(new_ttl_spd,complete.cases(new_ttl_spd))
+#Make a histogram of the total number of steps taken each day
+#Call ggplot lib
+library(ggplot2)
+#Plot
+new_range_steps<-range(new_ttl_spd,na.rm = T)[2]-range(new_ttl_spd,na.rm = T)[1]
+new_g_hist<-ggplot(new_ttl_spd,aes(steps))
+(new_g_hist  + geom_histogram(aes(steps),binwidth=new_range_steps/20,color="blue",fill="green")
++ labs(x="Total steps taken each day")
++ labs(y="Count")
++ labs(title="Histogram of total steps per day (missing values imputed)"))
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
+
+Report the mean and median of the new data set:
+
+```r
+#mean
+mean(new_ttl_spd$steps,na.rm=T)
+```
+
+```
+## [1] 10766.19
+```
+
+```r
+#median
+median(new_ttl_spd$steps,na.rm = T)
+```
+
+```
+## [1] 10766.19
+```
+
+As values plugged into the data set, the mean is unchanged however the median is changed (8 more values inserted).
+
+*Detailed comparation is listed below:*
+
+```r
+#Original data set
+summary(ttl_spd)
+```
+
+```
+##      steps      
+##  Min.   :   41  
+##  1st Qu.: 8841  
+##  Median :10765  
+##  Mean   :10766  
+##  3rd Qu.:13294  
+##  Max.   :21194  
+##  NA's   :8
+```
+
+```r
+#New data set
+summary(new_ttl_spd)
+```
+
+```
+##      steps      
+##  Min.   :   41  
+##  1st Qu.: 9819  
+##  Median :10766  
+##  Mean   :10766  
+##  3rd Qu.:12811  
+##  Max.   :21194
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+1.Create a new factor variable in the dataset with two levels:
+
+```r
+#Weekdays and weekends
+my_weekdays <- weekdays(as.Date(new_myactivity$date))
+my_weekdays <- as.factor(my_weekdays)
+levels(my_weekdays)<-c("weekday","weekday","weekend","weekend","weekday","weekday","weekday")
+new_myactivity$weekday_flag<-my_weekdays
+```
+*Below is the statistic by the factor:*
+
+```r
+#Table
+table(new_myactivity$weekday_flag)
+```
+
+```
+## 
+## weekday weekend 
+##   12960    4608
+```
+2.Make a panel plot containing a time series plot:
+Calculate the mean by two groups and clean up the data
+
+```r
+#Calculate the mean steps taken in 5-min interval by two groups
+new_avg_sp5<-tapply(new_myactivity$steps,INDEX = list(as.factor(new_myactivity$interval),as.factor(new_myactivity$weekday_flag)),mean)
+#Clean up the data
+new_avg_sp5<-as.data.frame(new_avg_sp5)
+wd_avg<-data.frame("interval"=as.numeric(row.names(new_avg_sp5)),"steps"=new_avg_sp5$weekday,"weekday_flag"=rep("weekday",nrow(new_avg_sp5)))
+we_avg<-data.frame("interval"=as.numeric(row.names(new_avg_sp5)),"steps"=new_avg_sp5$weekend,"weekday_flag"=rep("weekend",nrow(new_avg_sp5)))
+new_wk_avg<-rbind(wd_avg,we_avg)
+```
+Plot the time series
+
+```r
+library(ggplot2)
+new_g_timeseries=ggplot(new_wk_avg,aes(interval,steps))
+(new_g_timeseries+geom_line()
+                +facet_grid(weekday_flag ~ .)
+                + labs(x="Time interval")
+                + labs(y="Avg. steps")
+                + labs(title="Times series plot for each group"))
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-16-1.png) 
